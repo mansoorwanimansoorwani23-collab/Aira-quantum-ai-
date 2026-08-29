@@ -20,11 +20,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -187,7 +187,7 @@ fun ApiKeySetupDialog(
                                 modifier = Modifier.size(24.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Outlined.HelpOutline,
+                                    imageVector = Icons.AutoMirrored.Outlined.HelpOutline,
                                     contentDescription = "Gemini key instructions",
                                     tint = NeonGreen,
                                     modifier = Modifier.size(16.dp)
@@ -230,7 +230,7 @@ fun ApiKeySetupDialog(
                                 .testTag("get_gemini_key_button")
                         ) {
                             Icon(
-                                imageVector = Icons.Default.OpenInNew,
+                                imageVector = Icons.AutoMirrored.Filled.OpenInNew,
                                 contentDescription = null,
                                 modifier = Modifier.size(14.dp),
                                 tint = NeonGreen
@@ -270,7 +270,7 @@ fun ApiKeySetupDialog(
                                 modifier = Modifier.size(24.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Outlined.HelpOutline,
+                                    imageVector = Icons.AutoMirrored.Outlined.HelpOutline,
                                     contentDescription = "OpenAI key instructions",
                                     tint = SoftMagenta,
                                     modifier = Modifier.size(16.dp)
@@ -313,7 +313,7 @@ fun ApiKeySetupDialog(
                                 .testTag("get_openai_key_button")
                         ) {
                             Icon(
-                                imageVector = Icons.Default.OpenInNew,
+                                imageVector = Icons.AutoMirrored.Filled.OpenInNew,
                                 contentDescription = null,
                                 modifier = Modifier.size(14.dp),
                                 tint = SoftMagenta

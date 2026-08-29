@@ -232,8 +232,7 @@ class AiraViewModel(application: Application) : AndroidViewModel(application) {
                 apiKey = apiKey,
                 modelId = modelId,
                 conversationHistory = history,
-                pendingToolResult = toolResultTuple,
-                includeAudio = preferences.isAutoVoiceSpeakEnabled() || _uiState.value.isLiveVoiceOverlayOpen
+                pendingToolResult = toolResultTuple
             )
 
             result.onSuccess { response ->
@@ -284,7 +283,7 @@ class AiraViewModel(application: Application) : AndroidViewModel(application) {
             // Continue conversation loop with tool result to get final response
             dispatchToAI(convId, pendingToolCall = toolCall, pendingToolResult = executionResult.message)
         } else {
-            // Standard text / audio response
+            // Standard text response
             val assistantMsg = MessageEntity(
                 id = UUID.randomUUID().toString(),
                 conversationId = convId,
@@ -297,10 +296,150 @@ class AiraViewModel(application: Application) : AndroidViewModel(application) {
             _uiState.value = _uiState.value.copy(isLoading = false)
 
             // Handle voice playback ONLY via Gemini Live native audio pipeline
-            if (_uiState.value.isLiveVoiceOverlayOpen || preferences.isAutoVoiceSpeakEnabled()) {
-                if (!response.audioBase64.isNullOrBlank()) {
-                    liveVoiceManager.playAudioBase64(response.audioBase64)
-                }
+            if (!response.audioBase64.isNullOrBlank()) {
+                liveVoiceManager.playAudioBase64(response.audioBase64)
+            }
+        }
+    }
+
+    /**
+     * Sends user voice input directly to Gemini Live Session
+     */
+    fun sendLiveVoiceTurn(inputWavBytes: ByteArray?, recognizedText: String) {
+        val convId = _activeConversationId.value ?: return
+
+        val displayText = when {
+            recognizedText.isNotBlank() -> recognizedText
+            inputWavBytes != null && inputWavBytes.isNotEmpty() -> "🎙️ Voice input"
+            else -> return
+        }
+
+        viewModelScope.launch {
+            liveVoiceManager.setVoiceState(VoiceState.THINKING, "Arushi is thinking...")
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+
+            // Save user message
+            val userMsg = MessageEntity(
+                id = UUID.randomUUID().toString(),
+                conversationId = convId,
+                role = "user",
+                content = displayText
+            )
+            conversationDao.insertMessage(userMsg)
+
+            // Auto-generate title if this is the first user message
+            val existing = conversationDao.getMessagesSnapshot(convId)
+            if (existing.size <= 2) {
+                val title = if (displayText.length > 28) displayText.take(28) + "..." else displayText
+                conversationDao.renameConversation(convId, title)
+            } else {
+                conversationDao.touchConversation(convId)
+            }
+
+            dispatchToGeminiLive(
+                convId = convId,
+                inputWavBytes = inputWavBytes,
+                inputText = if (recognizedText.isNotBlank()) recognizedText else null
+            )
+        }
+    }
+
+    private suspend fun dispatchToGeminiLive(
+        convId: String,
+        inputWavBytes: ByteArray? = null,
+        inputText: String? = null,
+        pendingToolCall: ToolCallRequest? = null,
+        pendingToolResult: String? = null
+    ) {
+        val apiKey = preferences.getEffectiveGeminiApiKey()
+        if (apiKey.isBlank()) {
+            _uiState.value = _uiState.value.copy(
+                isLoading = false,
+                errorMessage = "Gemini API key missing. Please configure your key in Settings."
+            )
+            liveVoiceManager.setVoiceState(VoiceState.ERROR, "Gemini API key is required for Live Voice.")
+            return
+        }
+
+        val messages = conversationDao.getMessagesSnapshot(convId)
+        val history = messages.map { it.role to it.content }
+
+        val toolResultTuple = if (pendingToolCall != null && pendingToolResult != null) {
+            pendingToolCall.name to pendingToolResult
+        } else null
+
+        val result = geminiService.generateLiveVoiceContent(
+            apiKey = apiKey,
+            conversationHistory = history,
+            inputAudioBytes = inputWavBytes,
+            inputText = inputText,
+            pendingToolResult = toolResultTuple
+        )
+
+        result.onSuccess { response ->
+            handleGeminiLiveResponse(convId, response)
+        }.onFailure { error ->
+            _uiState.value = _uiState.value.copy(
+                isLoading = false,
+                errorMessage = error.message ?: "Failed to generate live voice response."
+            )
+            liveVoiceManager.setVoiceState(VoiceState.ERROR, error.message ?: "Voice connection failed")
+        }
+    }
+
+    private suspend fun handleGeminiLiveResponse(
+        convId: String,
+        response: com.example.data.api.AIResponse
+    ) {
+        val toolCall = response.toolCall
+
+        if (toolCall != null) {
+            _uiState.value = _uiState.value.copy(
+                isExecutingTool = true,
+                currentToolName = toolCall.name
+            )
+            liveVoiceManager.setVoiceState(VoiceState.EXECUTING_ACTION, "Executing action: ${toolCall.name}...")
+
+            val executionResult = actionBridge.executeTool(toolCall.name, toolCall.argsJson)
+
+            val toolMsg = MessageEntity(
+                id = UUID.randomUUID().toString(),
+                conversationId = convId,
+                role = "assistant",
+                content = if (response.text.isNotBlank()) response.text else "Action executed: ${toolCall.name}",
+                toolName = toolCall.name,
+                toolArgs = toolCall.argsJson,
+                toolResult = executionResult.message
+            )
+            conversationDao.insertMessage(toolMsg)
+
+            _uiState.value = _uiState.value.copy(
+                isExecutingTool = false,
+                currentToolName = null
+            )
+
+            // Continue loop with tool result to get spoken confirmation from Gemini Live
+            dispatchToGeminiLive(
+                convId = convId,
+                pendingToolCall = toolCall,
+                pendingToolResult = executionResult.message
+            )
+        } else {
+            val assistantMsg = MessageEntity(
+                id = UUID.randomUUID().toString(),
+                conversationId = convId,
+                role = "assistant",
+                content = response.text
+            )
+            conversationDao.insertMessage(assistantMsg)
+            conversationDao.touchConversation(convId)
+
+            _uiState.value = _uiState.value.copy(isLoading = false)
+
+            if (!response.audioBase64.isNullOrBlank()) {
+                liveVoiceManager.playAudioBase64(response.audioBase64)
+            } else {
+                liveVoiceManager.setVoiceState(VoiceState.IDLE, "Ready")
             }
         }
     }
@@ -325,10 +464,7 @@ class AiraViewModel(application: Application) : AndroidViewModel(application) {
         if (currentState == VoiceState.LISTENING) {
             val recognized = liveVoiceManager.recognizedSpeechText.value.trim()
             val wavBytes = liveVoiceManager.stopListeningAndGetWav()
-            liveVoiceManager.setVoiceState(VoiceState.THINKING, "Arushi is thinking...")
-
-            val queryText = if (recognized.isNotBlank()) recognized else "Voice command"
-            sendMessage(queryText)
+            sendLiveVoiceTurn(if (wavBytes.isNotEmpty()) wavBytes else null, recognized)
         } else if (currentState == VoiceState.SPEAKING) {
             liveVoiceManager.interrupt()
             liveVoiceManager.startListening()

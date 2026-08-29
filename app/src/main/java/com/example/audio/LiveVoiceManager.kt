@@ -222,7 +222,7 @@ class LiveVoiceManager(private val context: Context) {
                 var playBytes = rawBytes
                 var sampleRate = defaultSampleRate
 
-                // Check for RIFF WAV header
+                // Check for RIFF WAV header (44 bytes)
                 if (rawBytes.size > 44 &&
                     rawBytes[0] == 'R'.code.toByte() &&
                     rawBytes[1] == 'I'.code.toByte() &&
@@ -246,11 +246,12 @@ class LiveVoiceManager(private val context: Context) {
                     channelConfig,
                     audioFormat
                 )
+                val bufferSize = (minBufSize * 4).coerceAtLeast(8192)
 
                 audioTrack = AudioTrack.Builder()
                     .setAudioAttributes(
                         AudioAttributes.Builder()
-                            .setUsage(AudioAttributes.USAGE_ASSISTANCE_ACCESSIBILITY)
+                            .setUsage(AudioAttributes.USAGE_MEDIA)
                             .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                             .build()
                     )
@@ -261,7 +262,7 @@ class LiveVoiceManager(private val context: Context) {
                             .setChannelMask(channelConfig)
                             .build()
                     )
-                    .setBufferSizeInBytes((minBufSize * 2).coerceAtLeast(playBytes.size))
+                    .setBufferSizeInBytes(bufferSize)
                     .setTransferMode(AudioTrack.MODE_STREAM)
                     .build()
 
@@ -271,7 +272,8 @@ class LiveVoiceManager(private val context: Context) {
                 var offset = 0
                 while (isActive && offset < playBytes.size && audioTrack?.playState == AudioTrack.PLAYSTATE_PLAYING) {
                     val count = (playBytes.size - offset).coerceAtMost(chunkSize)
-                    audioTrack?.write(playBytes, offset, count)
+                    val written = audioTrack?.write(playBytes, offset, count, AudioTrack.WRITE_BLOCKING) ?: 0
+                    if (written <= 0) break
 
                     var maxAmp = 0
                     var i = offset
@@ -281,10 +283,10 @@ class LiveVoiceManager(private val context: Context) {
                         if (absVal > maxAmp) maxAmp = absVal
                         i += 2
                     }
-                    _audioAmplitude.value = (maxAmp / 32768f).coerceIn(0.1f, 1f)
+                    val normalizedAmp = (maxAmp / 32768f).coerceIn(0.05f, 1f)
+                    _audioAmplitude.value = normalizedAmp
 
                     offset += count
-                    Thread.sleep(15)
                 }
 
                 _audioAmplitude.value = 0f

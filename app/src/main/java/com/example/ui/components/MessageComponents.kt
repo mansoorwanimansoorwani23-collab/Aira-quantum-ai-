@@ -22,15 +22,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Terminal
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material.icons.outlined.Language
-import androidx.compose.material.icons.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Smartphone
@@ -183,7 +183,7 @@ fun MessageItemView(
                                         modifier = Modifier.size(28.dp)
                                     ) {
                                         Icon(
-                                            imageVector = if (isSpeaking) Icons.Default.VolumeUp else Icons.Default.PlayArrow,
+                                            imageVector = if (isSpeaking) Icons.AutoMirrored.Filled.VolumeUp else Icons.Default.PlayArrow,
                                             contentDescription = "Read aloud",
                                             tint = if (isSpeaking) NeonGreen else TextMuted,
                                             modifier = Modifier.size(16.dp)
@@ -244,7 +244,7 @@ fun ToolExecutionCard(
     val icon = when (toolName) {
         "openWhatsApp" -> Icons.Outlined.Language
         "openApp" -> Icons.Outlined.Smartphone
-        "openUrl" -> Icons.Outlined.OpenInNew
+        "openUrl" -> Icons.AutoMirrored.Outlined.OpenInNew
         "makeCall" -> Icons.Default.Phone
         "callContact" -> Icons.Outlined.Call
         else -> Icons.Outlined.Settings

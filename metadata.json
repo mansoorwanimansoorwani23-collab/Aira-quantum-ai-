@@ -1,5 +1,5 @@
 {
-  "name": "Arushi AI Assistant",
+  "name": "Arushi AI",
   "description": "Multilingual voice assistant featuring Gemini Live integration, automatic language detection, and direct app control via natural language commands.",
   "requestFramePermissions": [],
   "majorCapabilities": [

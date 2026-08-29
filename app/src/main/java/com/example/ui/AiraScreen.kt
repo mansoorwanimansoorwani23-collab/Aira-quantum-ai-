@@ -610,9 +610,9 @@ fun AiraInputBar(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun EmptyStateWelcome(
-    onPromptClick: (String) -> Unit,
-    onOpenVoice: () -> Unit,
-    onOpenSettings: () -> Unit
+    onPromptClick: (String) -> Unit = {},
+    onOpenVoice: () -> Unit = {},
+    onOpenSettings: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier

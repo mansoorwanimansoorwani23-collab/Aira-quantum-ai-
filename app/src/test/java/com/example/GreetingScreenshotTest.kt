@@ -24,7 +24,7 @@ class GreetingScreenshotTest {
   fun greeting_screenshot() {
     composeTestRule.setContent {
       MyApplicationTheme(darkTheme = true) {
-        EmptyStateWelcome(onPromptClick = {}, onOpenVoice = {})
+        EmptyStateWelcome(onPromptClick = {}, onOpenVoice = {}, onOpenSettings = {})
       }
     }
 

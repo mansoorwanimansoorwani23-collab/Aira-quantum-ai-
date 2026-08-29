@@ -24,11 +24,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -269,7 +269,7 @@ fun LiveVoiceOverlay(
                     ) {
                         Icon(
                             imageVector = when (voiceState) {
-                                VoiceState.SPEAKING -> Icons.Default.VolumeUp
+                                VoiceState.SPEAKING -> Icons.AutoMirrored.Filled.VolumeUp
                                 VoiceState.LISTENING -> Icons.Default.Mic
                                 VoiceState.EXECUTING_ACTION -> Icons.Default.Stop
                                 else -> Icons.Default.Mic

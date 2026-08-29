@@ -63,5 +63,21 @@ class ExampleRobolectricTest {
         assertNotNull(callResult)
         assertEquals("makeCall", callResult.toolName)
     }
+
+    @Test
+    fun `verify gemini model configuration separation`() {
+        val geminiModels = AIModelCatalog.GEMINI_MODELS
+        assertEquals(2, geminiModels.size)
+
+        val intelligenceModel = geminiModels.find { it.id == "gemini-3.5-flash" }
+        assertNotNull(intelligenceModel)
+        assertEquals("Gemini 3.5 Flash", intelligenceModel?.name)
+        assertTrue(intelligenceModel?.capabilities?.contains("Main Intelligence") == true)
+
+        val liveVoiceModel = geminiModels.find { it.id == "gemini-2.5-flash-native-audio-preview-12-2025" }
+        assertNotNull(liveVoiceModel)
+        assertEquals("Gemini Live Voice", liveVoiceModel?.name)
+        assertTrue(liveVoiceModel?.capabilities?.contains("Live Voice") == true)
+    }
 }
 

@@ -39,7 +39,7 @@ class GeminiService {
             return@withContext Result.failure(IllegalArgumentException("Gemini API key is missing."))
         }
         try {
-            val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$apiKey"
+            val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=$apiKey"
             val bodyJson = JSONObject().apply {
                 put("contents", JSONArray().apply {
                     put(JSONObject().apply {
@@ -69,7 +69,7 @@ class GeminiService {
     }
 
     /**
-     * Standard Chat & Intelligence generation using the latest selected Gemini model
+     * Standard Chat & Intelligence generation using Gemini with automatic fallback for high-demand (503/429/404)
      */
     suspend fun generateContent(
         apiKey: String,
@@ -81,74 +81,100 @@ class GeminiService {
             return@withContext Result.failure(IllegalArgumentException("Gemini API key is required. Please set your key in Settings."))
         }
 
-        try {
-            val endpointModel = if (modelId.isBlank()) "gemini-2.5-flash" else modelId
-            val url = "https://generativelanguage.googleapis.com/v1beta/models/$endpointModel:generateContent?key=$apiKey"
+        val primaryModel = if (modelId.isBlank()) "gemini-3.5-flash" else modelId
+        val candidateModels = linkedSetOf(
+            primaryModel,
+            "gemini-2.5-flash",
+            "gemini-2.0-flash",
+            "gemini-1.5-flash"
+        ).toList()
 
-            val contentsArray = JSONArray()
+        var lastException: Exception? = null
 
-            for ((role, content) in conversationHistory) {
-                val contentObj = JSONObject()
-                contentObj.put("role", if (role == "assistant" || role == "model") "model" else "user")
-                val partsArray = JSONArray()
-                partsArray.put(JSONObject().put("text", content))
-                contentObj.put("parts", partsArray)
-                contentsArray.put(contentObj)
-            }
+        for (endpointModel in candidateModels) {
+            try {
+                val url = "https://generativelanguage.googleapis.com/v1beta/models/$endpointModel:generateContent?key=$apiKey"
 
-            if (pendingToolResult != null) {
-                val (toolName, toolResultJson) = pendingToolResult
-                val functionResponseObj = JSONObject().apply {
-                    put("role", "function")
-                    put("parts", JSONArray().apply {
-                        put(JSONObject().apply {
-                            put("functionResponse", JSONObject().apply {
-                                put("name", toolName)
-                                put("response", JSONObject().apply {
+                val contentsArray = JSONArray()
+
+                for ((role, content) in conversationHistory) {
+                    val contentObj = JSONObject()
+                    contentObj.put("role", if (role == "assistant" || role == "model") "model" else "user")
+                    val partsArray = JSONArray()
+                    partsArray.put(JSONObject().put("text", content))
+                    contentObj.put("parts", partsArray)
+                    contentsArray.put(contentObj)
+                }
+
+                if (pendingToolResult != null) {
+                    val (toolName, toolResultJson) = pendingToolResult
+                    val functionResponseObj = JSONObject().apply {
+                        put("role", "function")
+                        put("parts", JSONArray().apply {
+                            put(JSONObject().apply {
+                                put("functionResponse", JSONObject().apply {
                                     put("name", toolName)
-                                    put("content", toolResultJson)
+                                    put("response", JSONObject().apply {
+                                        put("name", toolName)
+                                        put("content", toolResultJson)
+                                    })
                                 })
                             })
                         })
-                    })
-                }
-                contentsArray.put(functionResponseObj)
-            }
-
-            val requestJson = JSONObject().apply {
-                put("contents", contentsArray)
-                put("systemInstruction", JSONObject().apply {
-                    put("parts", JSONArray().apply {
-                        put(JSONObject().put("text", AIModelCatalog.AIRA_SYSTEM_INSTRUCTION))
-                    })
-                })
-                put("tools", JSONArray().apply {
-                    put(JSONObject().apply {
-                        put("functionDeclarations", getGeminiToolsDeclaration())
-                    })
-                })
-                put("generationConfig", JSONObject().apply {
-                    put("temperature", 0.7)
-                })
-            }
-
-            val request = Request.Builder()
-                .url(url)
-                .post(requestJson.toString().toRequestBody(jsonMediaType))
-                .build()
-
-            client.newCall(request).execute().use { response ->
-                val responseStr = response.body?.string() ?: ""
-                if (!response.isSuccessful) {
-                    val errorMsg = parseErrorMessage(responseStr, response.code)
-                    return@withContext Result.failure(Exception(errorMsg))
+                    }
+                    contentsArray.put(functionResponseObj)
                 }
 
-                parseCandidatesResponse(responseStr)
+                val requestJson = JSONObject().apply {
+                    put("contents", contentsArray)
+                    put("systemInstruction", JSONObject().apply {
+                        put("parts", JSONArray().apply {
+                            put(JSONObject().put("text", AIModelCatalog.AIRA_SYSTEM_INSTRUCTION))
+                        })
+                    })
+                    put("tools", JSONArray().apply {
+                        put(JSONObject().apply {
+                            put("functionDeclarations", getGeminiToolsDeclaration())
+                        })
+                    })
+                    put("generationConfig", JSONObject().apply {
+                        put("temperature", 0.7)
+                    })
+                }
+
+                val request = Request.Builder()
+                    .url(url)
+                    .post(requestJson.toString().toRequestBody(jsonMediaType))
+                    .build()
+
+                val callResult = client.newCall(request).execute().use { response ->
+                    val responseStr = response.body?.string() ?: ""
+                    if (!response.isSuccessful) {
+                        val errorMsg = parseErrorMessage(responseStr, response.code)
+                        Result.failure(Exception(errorMsg))
+                    } else {
+                        parseCandidatesResponse(responseStr)
+                    }
+                }
+
+                if (callResult.isSuccess) {
+                    return@withContext callResult
+                } else {
+                    val ex = callResult.exceptionOrNull() as? Exception ?: Exception("Gemini request failed")
+                    lastException = ex
+                    val msg = ex.message ?: ""
+                    // If error is 503 (high demand), 429 (rate limit), 404 (not found), or 500 (internal error), try next candidate model
+                    val isRecoverable = msg.contains("503") || msg.contains("429") || msg.contains("404") || msg.contains("500") || msg.contains("demand")
+                    if (!isRecoverable && endpointModel == primaryModel && !msg.contains("API key")) {
+                        // try next anyway
+                    }
+                }
+            } catch (e: Exception) {
+                lastException = e
             }
-        } catch (e: Exception) {
-            Result.failure(Exception("Gemini request failed: ${e.localizedMessage ?: "Network timeout"}"))
         }
+
+        Result.failure(lastException ?: Exception("Gemini request failed. Please check network connection."))
     }
 
     /**
@@ -169,12 +195,10 @@ class GeminiService {
             return@withContext Result.failure(IllegalArgumentException("Gemini API key is required."))
         }
 
-        // Live Voice Models Priority (Gemini 3.5 Live-compatible models for voice only)
+        // Dedicated Gemini Live Voice Models (Gemini 3.5 Live if available, fallback to latest official Live Voice models)
         val voiceModels = listOf(
             "gemini-3.5-flash",
-            "gemini-3.5-flash-preview",
             "gemini-2.5-flash-native-audio-preview-12-2025",
-            "gemini-2.0-flash-exp",
             "gemini-2.0-flash",
             "gemini-2.5-flash"
         )

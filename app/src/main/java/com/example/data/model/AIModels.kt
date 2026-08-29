@@ -17,28 +17,20 @@ data class AIModelInfo(
 object AIModelCatalog {
     val GEMINI_MODELS = listOf(
         AIModelInfo(
-            id = "gemini-2.5-flash",
-            name = "Gemini 2.5 Flash",
+            id = "gemini-3.5-flash",
+            name = "Gemini 3.5 Flash",
             provider = AIProvider.GEMINI,
-            description = "Latest ultra-fast multimodal model with native reasoning and audio intelligence for real-time live execution and chat.",
-            capabilities = listOf("Live Voice", "Ultra Fast", "Multimodal", "Device Tools", "Multilingual"),
-            badge = "Latest Flash"
+            description = "App Intelligence engine for reasoning, conversation, problem solving, STEM, and device tools.",
+            capabilities = listOf("Main Intelligence", "Reasoning", "Multimodal", "Device Tools", "Multilingual"),
+            badge = "App Intelligence"
         ),
         AIModelInfo(
-            id = "gemini-2.5-pro",
-            name = "Gemini 2.5 Pro",
+            id = "gemini-2.5-flash-native-audio-preview-12-2025",
+            name = "Gemini Live Voice",
             provider = AIProvider.GEMINI,
-            description = "Advanced reasoning, complex problem solving, deep code analysis, mathematics, and STEM.",
-            capabilities = listOf("Deep Reasoning", "Advanced Coding", "Math & STEM", "Complex Analysis"),
-            badge = "Pro Reasoning"
-        ),
-        AIModelInfo(
-            id = "gemini-2.0-flash",
-            name = "Gemini 2.0 Flash",
-            provider = AIProvider.GEMINI,
-            description = "High-speed multimodal model optimized for real-time responsiveness and tool integration.",
-            capabilities = listOf("Realtime Voice", "Audio Synthesis", "Fast Latency"),
-            badge = "Live Audio"
+            description = "Dedicated real-time Gemini Live voice session engine with native bidirectional 24kHz audio synthesis.",
+            capabilities = listOf("Live Voice", "Real-time Audio", "Ultra Low Latency"),
+            badge = "Live Voice"
         )
     )
 

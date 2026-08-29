@@ -113,7 +113,7 @@ class PreferencesManager(context: Context) {
         const val PROVIDER_GEMINI = "gemini"
         const val PROVIDER_OPENAI = "openai"
 
-        const val DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
+        const val DEFAULT_GEMINI_MODEL = "gemini-3.5-flash"
         const val DEFAULT_OPENAI_MODEL = "gpt-4o"
     }
 }

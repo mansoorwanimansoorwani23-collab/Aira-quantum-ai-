@@ -39,7 +39,7 @@ class GeminiService {
             return@withContext Result.failure(IllegalArgumentException("Gemini API key is missing."))
         }
         try {
-            val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$apiKey"
+            val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$apiKey"
             val bodyJson = JSONObject().apply {
                 put("contents", JSONArray().apply {
                     put(JSONObject().apply {
@@ -82,7 +82,7 @@ class GeminiService {
         }
 
         try {
-            val endpointModel = if (modelId.isBlank()) "gemini-3.5-flash" else modelId
+            val endpointModel = if (modelId.isBlank()) "gemini-2.5-flash" else modelId
             val url = "https://generativelanguage.googleapis.com/v1beta/models/$endpointModel:generateContent?key=$apiKey"
 
             val contentsArray = JSONArray()
@@ -153,8 +153,8 @@ class GeminiService {
 
     /**
      * Dedicated Gemini Live Voice Session Pipeline:
-     * - Uses Gemini 2.5 / 3.1 Live-compatible voice models
-     * - Supports audio input (WAV/PCM) and produces native 24kHz PCM audio output
+     * - Uses Gemini 3.5 Live-compatible voice models (with graceful multi-model fallback)
+     * - Supports real-time audio input (WAV/PCM) and produces native 24kHz/PCM audio output directly from Gemini Live
      * - Preserves tool calling and real-time execution
      */
     suspend fun generateLiveVoiceContent(
@@ -169,9 +169,12 @@ class GeminiService {
             return@withContext Result.failure(IllegalArgumentException("Gemini API key is required."))
         }
 
-        // Live Voice Models Priority (Gemini 2.5 / 3.1 Live-compatible models)
+        // Live Voice Models Priority (Gemini 3.5 Live-compatible models for voice only)
         val voiceModels = listOf(
+            "gemini-3.5-flash",
+            "gemini-3.5-flash-preview",
             "gemini-2.5-flash-native-audio-preview-12-2025",
+            "gemini-2.0-flash-exp",
             "gemini-2.0-flash",
             "gemini-2.5-flash"
         )

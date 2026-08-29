@@ -354,7 +354,7 @@ fun AiraTopBar(
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "AIRA QUANTUM AI",
+                            text = "QUANTUM AI",
                             color = TextPrimary,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Black,

@@ -22,6 +22,6 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "Aira AI Assistant"
+rootProject.name = "Quantum AI"
 
 include(":app")

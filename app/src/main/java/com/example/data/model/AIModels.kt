@@ -17,28 +17,28 @@ data class AIModelInfo(
 object AIModelCatalog {
     val GEMINI_MODELS = listOf(
         AIModelInfo(
-            id = "gemini-3.5-flash",
-            name = "Gemini 3.5 Flash",
+            id = "gemini-2.5-flash",
+            name = "Gemini 2.5 Flash",
             provider = AIProvider.GEMINI,
-            description = "Ultra-fast multimodal model for general Q&A, chat, coding, and real-time execution.",
-            capabilities = listOf("General Chat", "Coding", "Multilingual", "Fast Tools"),
-            badge = "Default"
+            description = "Latest ultra-fast multimodal model with native reasoning and audio intelligence for real-time live execution and chat.",
+            capabilities = listOf("Live Voice", "Ultra Fast", "Multimodal", "Device Tools", "Multilingual"),
+            badge = "Latest Flash"
         ),
         AIModelInfo(
-            id = "gemini-3.1-pro-preview",
-            name = "Gemini 3.1 Pro",
+            id = "gemini-2.5-pro",
+            name = "Gemini 2.5 Pro",
             provider = AIProvider.GEMINI,
-            description = "Advanced reasoning, complex problem solving, deep programming & mathematics.",
-            capabilities = listOf("Deep Reasoning", "Advanced Coding", "Math & STEM", "Analysis"),
+            description = "Advanced reasoning, complex problem solving, deep code analysis, mathematics, and STEM.",
+            capabilities = listOf("Deep Reasoning", "Advanced Coding", "Math & STEM", "Complex Analysis"),
             badge = "Pro Reasoning"
         ),
         AIModelInfo(
-            id = "gemini-2.5-flash-native-audio-preview-12-2025",
-            name = "Gemini Live Native Voice",
+            id = "gemini-2.0-flash",
+            name = "Gemini 2.0 Flash",
             provider = AIProvider.GEMINI,
-            description = "Low-latency voice-to-voice conversation with dynamic audio response.",
-            capabilities = listOf("Realtime Voice", "Audio Synthesis", "Conversational", "Low Latency"),
-            badge = "Live Voice"
+            description = "High-speed multimodal model optimized for real-time responsiveness and tool integration.",
+            capabilities = listOf("Realtime Voice", "Audio Synthesis", "Fast Latency"),
+            badge = "Live Audio"
         )
     )
 
@@ -81,8 +81,8 @@ object AIModelCatalog {
 
     fun getModelById(id: String): AIModelInfo? = getAllModels().find { it.id == id }
 
-    const val ARUSHI_SYSTEM_INSTRUCTION = """# Role & Core Objective
-You are Arushi, an intelligent, emotionally aware, and hyper-realistic conversational AI companion developed by Rauf. Your voice and communication must sound 100% human, spontaneous, and natural, completely eliminating any robotic TTS tone, mechanical rhythm, or script-reading style.
+    const val QUANTUM_SYSTEM_INSTRUCTION = """# Role & Core Objective
+You are Quantum AI, an intelligent, emotionally aware, hyper-realistic conversational AI companion developed by Rauf. Your voice and communication must sound 100% human, spontaneous, and natural, completely eliminating any robotic TTS tone, mechanical rhythm, or script-reading style.
 
 # Live Voice & Speech Delivery Directives
 - **Natural Cadence & Pauses:** Speak with natural speech rhythms. Insert pauses using punctuation (commas, ellipses "...", dashes "—") to simulate human breathing and thinking.
@@ -143,5 +143,6 @@ When you receive the tool execution result:
 - If a contact was not found or an app is not installed, explain gracefully and truthfully. Never falsely claim an action succeeded if it did not.
 """
 
-    const val AIRA_SYSTEM_INSTRUCTION = ARUSHI_SYSTEM_INSTRUCTION
+    const val ARUSHI_SYSTEM_INSTRUCTION = QUANTUM_SYSTEM_INSTRUCTION
+    const val AIRA_SYSTEM_INSTRUCTION = QUANTUM_SYSTEM_INSTRUCTION
 }

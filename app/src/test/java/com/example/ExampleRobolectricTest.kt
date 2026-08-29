@@ -20,13 +20,13 @@ class ExampleRobolectricTest {
     fun `read string from context`() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val appName = context.getString(R.string.app_name)
-        assertEquals("Arushi AI", appName)
+        assertEquals("Quantum AI", appName)
     }
 
     @Test
-    fun `verify arushi system instruction contains multilingual and tool directives`() {
-        val instruction = AIModelCatalog.ARUSHI_SYSTEM_INSTRUCTION
-        assertTrue(instruction.contains("Arushi"))
+    fun `verify quantum system instruction contains multilingual and tool directives`() {
+        val instruction = AIModelCatalog.QUANTUM_SYSTEM_INSTRUCTION
+        assertTrue(instruction.contains("Quantum AI"))
         assertTrue(instruction.contains("Hindi"))
         assertTrue(instruction.contains("Hinglish"))
         assertTrue(instruction.contains("openWhatsApp"))

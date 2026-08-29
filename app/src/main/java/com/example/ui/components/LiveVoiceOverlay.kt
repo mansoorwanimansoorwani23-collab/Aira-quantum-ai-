@@ -135,7 +135,7 @@ fun LiveVoiceOverlay(
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
-                            text = "ARUSHI DUPLEX VOICE",
+                            text = "QUANTUM LIVE VOICE",
                             color = TextPrimary,
                             fontFamily = FontFamily.Monospace,
                             fontSize = 16.sp,
@@ -328,11 +328,11 @@ fun LiveVoiceOverlay(
                 ) {
                     Text(
                         text = when (voiceState) {
-                            VoiceState.SPEAKING -> "❖ ARUSHI TRANSMITTING"
+                            VoiceState.SPEAKING -> "❖ QUANTUM TRANSMITTING"
                             VoiceState.LISTENING -> "❯ LISTENING TO SPEECH..."
                             VoiceState.THINKING -> "⚡ PROCESSING INTENT"
                             VoiceState.EXECUTING_ACTION -> "⚙ EXECUTING APP ACTION"
-                            else -> "❖ ARUSHI LIVE READY"
+                            else -> "❖ QUANTUM LIVE READY"
                         },
                         color = NeonGreen,
                         fontFamily = FontFamily.Monospace,

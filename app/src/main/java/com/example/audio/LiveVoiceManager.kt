@@ -50,9 +50,6 @@ class LiveVoiceManager(private val context: Context) {
     private val _audioAmplitude = MutableStateFlow(0f)
     val audioAmplitude: StateFlow<Float> = _audioAmplitude.asStateFlow()
 
-    private val _statusText = MutableStateFlow("Tap the microphone to speak with Arushi")
-    val statusText: StateFlow<String> = _statusText.asStateFlow()
-
     private val _recognizedSpeechText = MutableStateFlow("")
     val recognizedSpeechText: StateFlow<String> = _recognizedSpeechText.asStateFlow()
 
@@ -62,12 +59,16 @@ class LiveVoiceManager(private val context: Context) {
     private var playbackJob: Job? = null
 
     private var speechRecognizer: SpeechRecognizer? = null
+    private val pcmLock = Any()
     private val recordedPcmStream = ByteArrayOutputStream()
 
-    // Default 24kHz for Gemini Live Audio
+    // Default 24kHz for Gemini Live Audio (Gemini Native Audio outputs 24kHz 16-bit Mono PCM)
     private val defaultSampleRate = 24000
     private val channelConfig = AudioFormat.CHANNEL_OUT_MONO
     private val audioFormat = AudioFormat.ENCODING_PCM_16BIT
+
+    private val _statusText = MutableStateFlow("Tap the microphone to speak with Quantum AI")
+    val statusText: StateFlow<String> = _statusText.asStateFlow()
 
     fun setVoiceState(state: VoiceState, status: String? = null) {
         _voiceState.value = state
@@ -91,7 +92,7 @@ class LiveVoiceManager(private val context: Context) {
             return
         }
 
-        // Start real-time speech recognizer on main thread if available
+        // Start speech recognizer on main thread for real-time partial display if available
         mainHandler.post {
             try {
                 if (SpeechRecognizer.isRecognitionAvailable(context)) {
@@ -149,7 +150,16 @@ class LiveVoiceManager(private val context: Context) {
                 bufferSize
             )
 
-            recordedPcmStream.reset()
+            if (audioRecord?.state != AudioRecord.STATE_INITIALIZED) {
+                _voiceState.value = VoiceState.ERROR
+                _statusText.value = "AudioRecord initialization failed."
+                return
+            }
+
+            synchronized(pcmLock) {
+                recordedPcmStream.reset()
+            }
+
             audioRecord?.startRecording()
             _voiceState.value = VoiceState.LISTENING
             _statusText.value = "Listening to you in any language (Hindi, English, Hinglish)..."
@@ -160,11 +170,13 @@ class LiveVoiceManager(private val context: Context) {
                     val read = audioRecord?.read(buffer, 0, buffer.size) ?: 0
                     if (read > 0) {
                         var sum = 0.0
-                        for (i in 0 until read) {
-                            sum += buffer[i] * buffer[i]
-                            val sample = buffer[i].toInt()
-                            recordedPcmStream.write(sample and 0xFF)
-                            recordedPcmStream.write((sample shr 8) and 0xFF)
+                        synchronized(pcmLock) {
+                            for (i in 0 until read) {
+                                sum += buffer[i] * buffer[i]
+                                val sample = buffer[i].toInt()
+                                recordedPcmStream.write(sample and 0xFF)
+                                recordedPcmStream.write((sample shr 8) and 0xFF)
+                            }
                         }
                         val rms = sqrt(sum / read)
                         val normalized = (rms / 32767.0).toFloat().coerceIn(0f, 1f)
@@ -188,7 +200,9 @@ class LiveVoiceManager(private val context: Context) {
             recordJob?.cancel()
         } catch (_: Exception) {}
         _audioAmplitude.value = 0f
-        return recordedPcmStream.toByteArray()
+        return synchronized(pcmLock) {
+            recordedPcmStream.toByteArray()
+        }
     }
 
     fun stopListeningAndGetWav(): ByteArray {
@@ -217,7 +231,7 @@ class LiveVoiceManager(private val context: Context) {
             try {
                 val rawBytes = Base64.decode(base64Audio, Base64.DEFAULT)
                 _voiceState.value = VoiceState.SPEAKING
-                _statusText.value = "Arushi is speaking..."
+                _statusText.value = "Quantum AI is speaking..."
 
                 var playBytes = rawBytes
                 var sampleRate = defaultSampleRate

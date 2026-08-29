@@ -315,7 +315,7 @@ class AiraViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         viewModelScope.launch {
-            liveVoiceManager.setVoiceState(VoiceState.THINKING, "Arushi is thinking...")
+            liveVoiceManager.setVoiceState(VoiceState.THINKING, "Quantum AI is thinking...")
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
 
             // Save user message

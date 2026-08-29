@@ -1,6 +1,6 @@
 {
-  "name": "Arushi AI",
-  "description": "Multilingual voice assistant featuring Gemini Live integration, automatic language detection, and direct app control via natural language commands.",
+  "name": "Quantum AI",
+  "description": "Next-generation multimodal voice assistant powered by the latest Gemini live engine with real-time bidirectional voice and system control.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

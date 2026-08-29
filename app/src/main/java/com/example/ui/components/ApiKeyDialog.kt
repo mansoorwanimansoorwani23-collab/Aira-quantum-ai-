@@ -114,7 +114,7 @@ fun ApiKeySetupDialog(
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text(
-                            text = "AIRA QUANTUM AI",
+                            text = "QUANTUM AI",
                             color = TextPrimary,
                             fontFamily = FontFamily.Monospace,
                             fontSize = 18.sp,

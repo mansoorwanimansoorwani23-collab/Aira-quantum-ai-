@@ -34,6 +34,12 @@ class ExampleRobolectricTest {
         assertTrue(instruction.contains("makeCall"))
         assertTrue(instruction.contains("callContact"))
         assertTrue(instruction.contains("Rauf"))
+        assertTrue(instruction.contains("Natural Cadence & Pauses"))
+        assertTrue(instruction.contains("Dynamic Tone & Pitch"))
+        assertTrue(instruction.contains("Conversational Realism"))
+        assertTrue(instruction.contains("SCRIPT EXTRACTOR"))
+        assertTrue(instruction.contains("EMOTION-TAGGING"))
+        assertTrue(instruction.contains("VOICE HUMANIZATION"))
     }
 
     @Test

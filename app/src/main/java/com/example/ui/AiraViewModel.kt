@@ -1,7 +1,6 @@
 package com.example.ui
 
 import android.app.Application
-import android.speech.tts.TextToSpeech
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.audio.LiveVoiceManager
@@ -51,9 +50,6 @@ class AiraViewModel(application: Application) : AndroidViewModel(application) {
     private val geminiService = GeminiService()
     private val openAiService = OpenAIService()
 
-    private var textToSpeech: TextToSpeech? = null
-    private var isTtsReady = false
-
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
@@ -73,14 +69,6 @@ class AiraViewModel(application: Application) : AndroidViewModel(application) {
     private var messageCollectionJob: Job? = null
 
     init {
-        // Init TTS as natural fallback for text mode speak
-        textToSpeech = TextToSpeech(application) { status ->
-            if (status == TextToSpeech.SUCCESS) {
-                textToSpeech?.language = Locale.getDefault()
-                isTtsReady = true
-            }
-        }
-
         // Check first launch
         val geminiKey = preferences.getEffectiveGeminiApiKey()
         val openAiKey = preferences.getOpenAiApiKey()
@@ -308,27 +296,17 @@ class AiraViewModel(application: Application) : AndroidViewModel(application) {
 
             _uiState.value = _uiState.value.copy(isLoading = false)
 
-            // Handle voice playback
+            // Handle voice playback ONLY via Gemini Live native audio pipeline
             if (_uiState.value.isLiveVoiceOverlayOpen || preferences.isAutoVoiceSpeakEnabled()) {
                 if (!response.audioBase64.isNullOrBlank()) {
                     liveVoiceManager.playAudioBase64(response.audioBase64)
-                } else if (response.text.isNotBlank()) {
-                    speakText(response.text, assistantMsg.id)
                 }
             }
         }
     }
 
-    fun speakText(text: String, messageId: String? = null) {
-        if (!isTtsReady || text.isBlank()) return
-        liveVoiceManager.interrupt()
-        _uiState.value = _uiState.value.copy(speakingMessageId = messageId)
-        textToSpeech?.speak(text, TextToSpeech.QUEUE_FLUSH, null, messageId ?: "aira_tts")
-    }
-
     fun stopSpeaking() {
         liveVoiceManager.interrupt()
-        textToSpeech?.stop()
         _uiState.value = _uiState.value.copy(speakingMessageId = null)
     }
 
@@ -432,7 +410,5 @@ class AiraViewModel(application: Application) : AndroidViewModel(application) {
     override fun onCleared() {
         super.onCleared()
         liveVoiceManager.release()
-        textToSpeech?.stop()
-        textToSpeech?.shutdown()
     }
 }

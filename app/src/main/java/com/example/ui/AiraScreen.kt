@@ -186,14 +186,8 @@ fun AiraScreen(viewModel: AiraViewModel) {
                         items(messages, key = { it.id }) { msg ->
                             MessageItemView(
                                 message = msg,
-                                isSpeaking = uiState.speakingMessageId == msg.id,
-                                onSpeakClick = {
-                                    if (uiState.speakingMessageId == msg.id) {
-                                        viewModel.stopSpeaking()
-                                    } else {
-                                        viewModel.speakText(msg.content, msg.id)
-                                    }
-                                }
+                                isSpeaking = false,
+                                onSpeakClick = null
                             )
                         }
 
@@ -785,8 +779,8 @@ fun EmptyStateWelcome(
             "Hindi mein baat karo",
             "Open YouTube",
             "Call Mummy",
-            "Hinglish mein baat karo",
-            "Open device Settings"
+            "Add emotions to script",
+            "Voice analysis"
         )
 
         FlowRow(
